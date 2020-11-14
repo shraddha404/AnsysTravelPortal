@@ -1,0 +1,223 @@
+<?php
+session_start();
+$limit = 15;  
+if (isset($_GET["page"])) { $page  = $_GET["page"]; } else { $page=1; };  
+ $start_from = ($page-1) * $limit;  
+$status=$_GET['status'];
+if($_SESSION['user_type'] == 'Travel Desk'){
+	include_once ('../lib/TravelDesk.class.php');
+	$u = new TravelDesk($_SESSION['user_id']);
+	if(!empty($_GET)){
+	//$travel_requests = $u->getTravelRequests();
+		if($_GET['status']=='Closed'){
+		$travel_requests = $u->requestclosed($_GET['id']);
+		header("location:travel-requests-received.php");
+		}
+		else if($_GET['status']=='Open'){
+		$travel_requests = $u->requestopen($_GET['id']);
+		header("location:travel-requests-received.php");
+		}
+		else if($_GET['status']=='Closedreq'){
+		$travel_requests = $u->allrequestclosed($start_from,$limit);//print_r($travel_requests);exit;
+		//header("location:travel-requests-received.php");
+		}
+		else if($_GET['status']=='Openreq'){
+		$travel_requests = $u->allrequestopen($start_from,$limit);
+		//header("location:travel-requests-received.php");
+		}
+ 		else{
+       		 $travel_requests = $u->getTravelRequests($start_from,$limit);
+      		  }
+	}
+        else{
+        $travel_requests = $u->getTravelRequests($start_from,$limit);
+        }
+}
+else if($_SESSION['user_type'] == 'Manager'){
+	include_once $_SERVER['DOCUMENT_ROOT'].'/../lib/Manager.class.php';
+	$u = new Manager($_SESSION['user_id']);
+         $travel_requests = $u->getTravelRequests($start_from,$limit);
+}
+
+//print_r($travel_requests);?>
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!-- Consider adding a manifest.appcache: h5bp.com/d/Offline -->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+
+
+<head>
+  <meta charset="utf-8">
+
+  <!-- Use the .htaccess and remove these lines to avoid edge case issues.
+       More info: h5bp.com/i/378 -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <title></title>
+  <meta name="description" content="">
+
+  <!-- Mobile viewport optimized: h5bp.com/viewport -->
+  <meta name="viewport" content="width=device-width">
+
+  <!-- Place favicon.ico and apple-touch-icon.png in the root directory: mathiasbynens.be/notes/touch-icons -->
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- More ideas for your <head> here: h5bp.com/d/head-Tips -->
+
+  <!-- All JavaScript at the bottom, except this Modernizr build.
+       Modernizr enables HTML5 elements & feature detects for optimal performance.
+       Create your own custom Modernizr build: www.modernizr.com/download/ -->
+  <script src="js/libs/modernizr-2.5.3.min.js"></script>
+</head>
+<body>
+<div id="wrapper">
+  <!-- Prompt IE 6 users to install Chrome Frame. Remove this if you support IE 6.
+       chromium.org/developers/how-tos/chrome-frame-getting-started -->
+  <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
+  <header id="header"><img src="img/logo-sml.jpg" alt="Ansys Software" /> </header>
+  <div role="main">
+  <div class="in-bloc cent row"><img src="img/globe.jpg" alt="Travel-desk-view" />
+
+<?php if($status=='Closedreq' || !empty($status)){ ?><h1 class="in-bloc">Closed requests</h1><?php } else if($status=='Openreq'|| empty($status)){?><h1 class="in-bloc">Open Requests</h1><?php } ?><br/><br/>
+
+<h3 align='right'>
+<div>
+<?php if($_SESSION['user_type'] == 'Travel Desk'){ ?><div float="left">
+<?php if($status=='Openreq' || empty($status)){ if(empty($_GET['page'])){$_GET['page']=1; }?><a href="travel-requests-received.php?status=Closedreq&page=<?php echo $_GET['page'];?>&id=<?php echo $_GET['id'];?>"  >Closed Requests</a><?php }  else if($status=='Closedreq'){?><a href="travel-requests-received.php?page=<?php echo $_GET['page'];?>&status=Openreq&id=<?php echo $_GET['id'];?>">Open Requests</a><?php } ?><?php } ?></div>
+
+<div float="right">
+<?php  $type=$u->getUserType();if($type=='Employee'){?><a href='emp-board.php'>Dashboard</a><?php }?>
+<?php $type=$u->getUserType();if($type=='Manager'){?><a href='manager-board.php'>Dashboard</a><?php }?>
+<?php $type=$u->getUserType();if($type=='Travel Desk'){?><a href='travel-desk-board.php'>Dashboard</a><?php }?>
+<?php $type=$u->getUserType();if($type=='Admin'){?><a href='admin-board.php'>Dashboard</a><?php }?>
+&nbsp;&nbsp;&nbsp;<a href='logout.php'>Logout</a></h3></div> </div>
+  <table class="resp"><!--rows to be added dynamically as required-->
+ <thead>
+    <tr>
+      <th>Trip ID</th>
+      <th>Request Date</th>
+      <th>Generated by</th>
+      <th>Trip Type</th>
+      <th>Booking Type</th>
+      <th>Business unit</th>
+      <th>Approval status</th>
+      <th>Request Details</th>
+    </tr>
+  </thead>
+  <tbody>
+	<?php if(!empty($travel_requests)){
+		foreach ($travel_requests as $request){?>
+	    <tr>
+	      <td align="center"><?php echo $request['id']; ?></td>
+	      <td align="center"><?php echo $request['date']; ?></td>
+	      <td align="center"><?php echo ucfirst($request['firstname']." ".$request['middlename']." ".$request['lastname']); ?></td>
+	      <td align="center"><?php echo ucfirst($request['trip_type']); ?></td>
+	      <td align="center"><?php echo ucfirst($request['booking_type']); ?></td>
+	      <td align="center"><?php $record = $u->getous($request['ou']); echo $record['ou_short_name']; ?></td>
+
+
+	      <td>&nbsp;<?php if($request['manager_approved'] == 1){echo "Approved";}else{ echo "Pending";}?></td>
+		<?php if($_SESSION['user_type'] == 'Travel Desk'){ ?>
+	      <td align="center"><a href="travel-request-suggested-plan.php?trip_id=<?php echo $request['id'];?>">View</a>&nbsp;&nbsp;&nbsp;
+		<?php if($status=='Openreq' || empty($status)){?>
+		<a href="travel-requests-received.php?page=<?php echo $_GET['page'];?>&status=Closed&id=<?php echo $request['id'];?>" onclick="return confirm('Are you sure you want to close this request?');">Close Request</a><?php }
+		 else if($status=='Closedreq'){?> 
+		<a href="travel-requests-received.php?page=<?php echo $_GET['page'];?>&status=Open&id=<?php echo $request['id'];?>">Reopen Request</a> <?php } ?> </td>
+		<?php 
+		}
+		else if ($_SESSION['user_type'] == 'Manager'){ ?>
+	      <td align="center"><a href="travel-request--suggested-plan.php?trip_id=<?php echo $request['id'];?>">View</a></td>
+		<?php 
+		} 
+		
+
+?>
+</tr>			   
+<?php } ## foreach ends ?> 
+<tr><td>
+ <?php }else{ echo "No Data";}?>
+  </td> </tr>
+
+
+
+</tbody>
+</table>
+<table><tr><td align="center">
+
+
+<?php 
+if($_GET['status']=='Closedreq'){$travel_requests = $u->allrequestclosedpagination();}else{$travel_requests = $u->getTravelRequestspagination();}
+
+$total_records = count($travel_requests);  
+
+$total_pages = ceil($total_records / $limit);
+$pagLink = "<div class='pagination'><strong>Page No.";  
+for ($i=1; $i<=$total_pages; $i++) {  
+            if(empty($status)) {$pagLink .= "<a href='travel-requests-received.php?page=".$i."'>".$i."</a>"."     ";}else{
+             $pagLink .= "<a href='travel-requests-received.php?page=".$i."&status=".$status."&id=".$_GET['id']."'>".$i."</a>"."     ";}
+};  
+echo $pagLink ."</div></strong>";  
+?></td></tr></table>
+  
+
+  </div>
+  <footer>
+
+  </footer>
+</div><!--wrapper ends--> 
+
+  <!-- JavaScript at the bottom for fast page loading -->
+
+  <!-- Grab Google CDN's jQuery, with a protocol relative URL; fall back to local if offline -->
+  
+  <script src="js/libs/jquery-1.7.1.min.js"></script>
+  <script>
+(function () {
+	var headertext = [];
+	var headers = document.querySelectorAll("thead");
+	var tablebody = document.querySelectorAll("tbody");
+	
+	for(var i = 0; i < headers.length; i++) {
+		headertext[i]=[];
+		for (var j = 0, headrow; headrow = headers[i].rows[0].cells[j]; j++) {
+		  var current = headrow;
+		  headertext[i].push(current.textContent.replace(/\r?\n|\r/,""));
+		  }
+	} 
+	
+	if (headers.length > 0) {
+		for (var h = 0, tbody; tbody = tablebody[h]; h++) {
+			for (var i = 0, row; row = tbody.rows[i]; i++) {
+			  for (var j = 0, col; col = row.cells[j]; j++) {
+			    col.setAttribute("data-th", headertext[h][j]);
+			  } 
+			}
+		}
+	}
+} ());
+</script>
+  
+
+  <!-- scripts concatenated and minified via build script -->
+  <script src="js/plugins.js"></script>
+  <script src="js/script.js"></script>
+  <!-- end scripts -->
+
+  <!-- Asynchronous Google Analytics snippet. Change UA-XXXXX-X to be your site's ID.
+       mathiasbynens.be/notes/async-analytics-snippet>
+  <script>
+    var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
+    (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+    s.parentNode.insertBefore(g,s)}(document,'script'));
+  </script -->
+
+
+         
+  
+</body>
+</html>
