@@ -375,9 +375,56 @@ $time = mktime($out[3], $out[4], $out[5], $out[1], $out[2], $out[0]);
 $new_date = date('Y-m-d H:i:s', $time); */
 //print_r($data);print_r($preferred_airline_time);exit;
 //print_r($data);exit;
-	$datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open'];                         
-	$this->pdo->insert('trips', $datat);
+
+###### Code added  on 24 May 2023 to attach Manager Approval Report for longer journey
+                //$path = "uploads/";
+                //SKK
+                $path = $_SERVER['DOCUMENT_ROOT'] . "/uploads/manager-approval-reports/";
+                if($_FILES['manager_approval_report']['name']!=''){
+                        $utime = md5(uniqid(time()));
+                        $fname=$this->user_id."_".$utime."_".$_FILES['manager_approval_report']['name'];
+                        $report_name=$fname;
+                        $allowed_file_types = array('jpeg','jpg','png','pdf');
+                        $filecheck = basename($_FILES['manager_approval_report']['name']);
+                        $ext = strtolower(substr($filecheck, strrpos($filecheck, '.') + 1));
+                        //echo $fname;exit;
+                        $ftmpname=$_FILES['manager_approval_report']['tmp_name'];
+                        //echo $fname;exit;
+
+                        if(move_uploaded_file($ftmpname, $path.$fname)){
+/*
+      $insert = "INSERT INTO trips
+      (`emp_id`,`purpose_of_visit`,`special_mention`,`trip_type`,`date`,`cost`,`status`,`manager_approval_report`,`booking_type`,`manager_approved`,`cash_adv`,`preferred_airline_time`,`multiple_days_car`)
+      VALUES(?,?,?,?,NOW(),?,'Open',?,'airline','0','0','0','0')";
+        $insert_args = [$this->user_id,$data['purpose_of_visit'],$data['special_mention'],$data['trip_type'],$data['cash_adv'],$report_name];
+      try{
+      $stmt=$this->pdo->prepare($insert);
+      $stmt->execute($insert_args);
+      }
+      catch(PDOException $e){
+        echo $e->getMessage(); exit;
+      $this->setError($e->getMessage());
+      return false;
+      }
+*/
+ $datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open','manager_approval_report'=>$report_name,'manager_approved'=>'1','cash_adv'=>'0','preferred_airline_time'=>'0','multiple_days_car'=>0];
+                        $this->pdo->insert('trips', $datat);
+                        }
+                        else{
+                        echo $e->getMessage();
+                        $this->setError('File Not uploaded');
+                        }
+                }
+                else{
+                        $datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open','manager_approval_report'=>'','manager_approved'=>0,'cash_adv'=>'0','preferred_airline_time'=>'0','multiple_days_car'=>0];
+                        $this->pdo->insert('trips', $datat);
+                }       # Managerapprovalreport else ends
+
+//	$datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open'];                         
+//	$this->pdo->insert('trips', $datat);
+
 	$id = $this->pdo->lastInsertId();
+
 	$c=count($onwardcity);
 	for($z = 0; $z <  $c; $z++ )
 	{   
@@ -425,6 +472,16 @@ $destdeptlastInsertId=$this->pdo->lastInsertId();
 	 $body .= "<b>Phone Number : </b>".$row[0]['contact_no']."<br/><br/>";
         $body .= "<b>Email : </b>".$row[0]['email']."<br/><br/>";
         $body .= "<b>Trip Id : </b>".$id."<br/><br/>";
+
+	$row_trip_details = $this->pdo->select('trips', '`id`=' . $id);
+	$manager_approval_report = $row_trip_details[0]['manager_approval_report'];
+//echo $manager_approval_report;
+//exit;
+
+                if(!empty($manager_approval_report)){
+                  $body .= "<b>BU Budget Holder Approval Report : </b><a href='http://".$_SERVER['HTTP_HOST']."/uploads/manager-approval-reports/".$manager_approval_report."' target='_blank'>View</a><br /><br />";
+                }
+
 	//$sendername=$row[0]['firstname'].'  '. $row[0]['lastname'];
 	### Request ID added in body
 	//$request_id = $this->pdo->lastInsertId();
@@ -478,7 +535,12 @@ if(!empty($late_checkout_date[$z])){ $lchd= date("F j, Y", strtotime($late_check
       	$body .="</html></body>";                 
 #echo $body;
 #exit;
+if($_FILES['manager_approval_report']['name']!=''){ //Manager approval report
+$flag='Longer Journey Manager Approval';
+$subject = 'ANSYS Travel Portal: New booking with manager approval report';		    
+}else{
 $flag='request';
+}
 	$requestmail= $this->sendemail($to,$subject,$body,$formemail,$id,$flag);//Send mail Car Request details 
 
   }   
@@ -525,8 +587,55 @@ $car_pickuptime = @array_values(array_filter($data['car_pickuptime'], 'filter_ca
 $meal_preference = @array_values(array_filter($data['meal_preference'], 'filter_callbackround'));
   //********************destination_and_departure instration for round trip Trip*******************************//
 
-		$datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open'];   
-		$this->pdo->insert('trips', $datat);
+###### Code added  on 24 May 2023 to attach Manager Approval Report for longer journey
+                //$path = "uploads/";
+                //SKK
+                $path = $_SERVER['DOCUMENT_ROOT'] . "/uploads/manager-approval-reports/";
+                if($_FILES['manager_approval_report']['name']!=''){
+                        $utime = md5(uniqid(time()));
+                        $fname=$this->user_id."_".$utime."_".$_FILES['manager_approval_report']['name'];
+                        $report_name=$fname;
+                        $allowed_file_types = array('jpeg','jpg','png','pdf');
+                        $filecheck = basename($_FILES['manager_approval_report']['name']);
+                        $ext = strtolower(substr($filecheck, strrpos($filecheck, '.') + 1));
+                        //echo $fname;exit;
+                        $ftmpname=$_FILES['manager_approval_report']['tmp_name'];
+                        //echo $fname;exit;
+
+                        if(move_uploaded_file($ftmpname, $path.$fname)){
+/*
+      $insert = "INSERT INTO trips
+      (`emp_id`,`purpose_of_visit`,`special_mention`,`trip_type`,`date`,`cost`,`status`,`manager_approval_report`,`booking_type`,`manager_approved`,`cash_adv`,`preferred_airline_time`,`multiple_days_car`)
+      VALUES(?,?,?,?,NOW(),?,'Open',?,'airline','0','0','0','0')";
+        $insert_args = [$this->user_id,$data['purpose_of_visit'],$data['special_mention'],$data['trip_type'],$data['cash_adv'],$report_name];
+      try{
+      $stmt=$this->pdo->prepare($insert);
+      $stmt->execute($insert_args);
+      }
+      catch(PDOException $e){
+        echo $e->getMessage(); exit;
+      $this->setError($e->getMessage());
+      return false;
+      }
+*/
+ $datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open','manager_approval_report'=>$report_name,'manager_approved'=>'1','cash_adv'=>'0','preferred_airline_time'=>'0','multiple_days_car'=>0];
+                        $this->pdo->insert('trips', $datat);
+                        }
+                        else{
+                        echo $e->getMessage();
+                        $this->setError('File Not uploaded');
+                        }
+                }
+                else{
+                        $datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open','manager_approval_report'=>'','manager_approved'=>0,'cash_adv'=>'0','preferred_airline_time'=>'0','multiple_days_car'=>0];
+                        $this->pdo->insert('trips', $datat);
+                }       # Managerapprovalreport else ends
+
+
+////////////////
+//		$datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open'];   
+//		$this->pdo->insert('trips', $datat);
+
 		$id = $this->pdo->lastInsertId();
 $row = $this->pdo->select('emp_list', '`id`='.$this->user_id);$to=$row[0]['email'];
 	$formemail=$row[0]['email'];
@@ -644,6 +753,14 @@ $l=$this->getoffice_locations($row[0]['location']);
   $body .= "<b>Phone Number : </b>".$row[0]['contact_no']."<br/><br/>";
         $body .= "<b>Email : </b>".$row[0]['email']."<br/><br/>";
         $body .= "<b>Trip Id : </b>".$id."<br/><br/>";
+	$row_trip_details = $this->pdo->select('trips', '`id`=' . $id);
+	$manager_approval_report = $row_trip_details[0]['manager_approval_report'];
+//echo $manager_approval_report;
+//exit;
+
+                if(!empty($manager_approval_report)){
+                  $body .= "<b>BU Budget Holder Approval Report : </b><a href='http://".$_SERVER['HTTP_HOST']."/uploads/manager-approval-reports/".$manager_approval_report."' target='_blank'>View</a><br /><br />";
+                }
 	### Request ID added in body
 	//$request_id = $this->pdo->lastInsertId();
        // $body .= "<b>Request ID Onward Journey: </b>".$destdeptlastInsertId_one."<br/><br/>";
@@ -723,7 +840,12 @@ $l=$this->getoffice_locations($row[0]['location']);
 
 #echo $body;
 #exit;
+if($_FILES['manager_approval_report']['name']!=''){ //Manager approval report
+$flag='Longer Journey Manager Approval';
+$subject = 'ANSYS Travel Portal: New booking with manager approval report';		    
+}else{
 $flag='request';
+}
 	$requestmail= $this->sendemail($to,$subject,$body,$formemail,$id,$flag);//Send mail Car Request details 
 
  }
@@ -783,8 +905,56 @@ $meal_preference = @array_values(array_filter($data['meal_preferencemulti'], 'fi
 //print_r($othertraveltos);
 //print_r($data['otherhotelmulti']);
 //print_r($onwardcity);exit;
-	$datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open']; 
-	$this->pdo->insert('trips', $datat);
+
+###### Code added  on 24 May 2023 to attach Manager Approval Report for longer journey
+                //$path = "uploads/";
+                //SKK
+                $path = $_SERVER['DOCUMENT_ROOT'] . "/uploads/manager-approval-reports/";
+                if($_FILES['manager_approval_report']['name']!=''){
+                        $utime = md5(uniqid(time()));
+                        $fname=$this->user_id."_".$utime."_".$_FILES['manager_approval_report']['name'];
+                        $report_name=$fname;
+                        $allowed_file_types = array('jpeg','jpg','png','pdf');
+                        $filecheck = basename($_FILES['manager_approval_report']['name']);
+                        $ext = strtolower(substr($filecheck, strrpos($filecheck, '.') + 1));
+                        //echo $fname;exit;
+                        $ftmpname=$_FILES['manager_approval_report']['tmp_name'];
+                        //echo $fname;exit;
+
+                        if(move_uploaded_file($ftmpname, $path.$fname)){
+/*
+      $insert = "INSERT INTO trips
+      (`emp_id`,`purpose_of_visit`,`special_mention`,`trip_type`,`date`,`cost`,`status`,`manager_approval_report`,`booking_type`,`manager_approved`,`cash_adv`,`preferred_airline_time`,`multiple_days_car`)
+      VALUES(?,?,?,?,NOW(),?,'Open',?,'airline','0','0','0','0')";
+        $insert_args = [$this->user_id,$data['purpose_of_visit'],$data['special_mention'],$data['trip_type'],$data['cash_adv'],$report_name];
+      try{
+      $stmt=$this->pdo->prepare($insert);
+      $stmt->execute($insert_args);
+      }
+      catch(PDOException $e){
+        echo $e->getMessage(); exit;
+      $this->setError($e->getMessage());
+      return false;
+      }
+*/
+ $datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open','manager_approval_report'=>$report_name,'manager_approved'=>'1','cash_adv'=>'0','preferred_airline_time'=>'0','multiple_days_car'=>0];
+                        $this->pdo->insert('trips', $datat);
+                        }
+                        else{
+                        echo $e->getMessage();
+                        $this->setError('File Not uploaded');
+                        }
+                }
+                else{
+                        $datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open','manager_approval_report'=>'','manager_approved'=>0,'cash_adv'=>'0','preferred_airline_time'=>'0','multiple_days_car'=>0];
+                        $this->pdo->insert('trips', $datat);
+                }       # Managerapprovalreport else ends
+
+
+
+///////////////////////
+//	$datat=['emp_id'=>$this->user_id,'date'=>date('Y-m-d'),'booking_type'=>'airline','purpose_of_visit'=>$data['purpose_of_visit'] ,'special_mention'=>$data['special_mention'],'trip_type'=>$data['trip_type'],'cost'=>$data['cash_adv'],'status'=>'Open']; 
+//	$this->pdo->insert('trips', $datat);
 
 	$id = $this->pdo->lastInsertId();
 	$row = $this->pdo->select('emp_list', '`id`='.$this->user_id);$to=$row[0]['email'];
@@ -806,6 +976,14 @@ $meal_preference = @array_values(array_filter($data['meal_preferencemulti'], 'fi
 	$body .= "<b>Phone Number : </b>".$row[0]['contact_no']."<br/><br/>";
         $body .= "<b>Email : </b>".$row[0]['email']."<br/><br/>";
         $body .= "<b>Trip Id : </b>".$id."<br/><br/>";
+	$row_trip_details = $this->pdo->select('trips', '`id`=' . $id);
+	$manager_approval_report = $row_trip_details[0]['manager_approval_report'];
+//echo $manager_approval_report;
+//exit;
+
+                if(!empty($manager_approval_report)){
+                  $body .= "<b>BU Budget Holder Approval Report : </b><a href='http://".$_SERVER['HTTP_HOST']."/uploads/manager-approval-reports/".$manager_approval_report."' target='_blank'>View</a><br /><br />";
+                }
 
 	//********************destination_and_departure instration for multicity Trip*******************************//
 
@@ -1496,7 +1674,12 @@ if($otheronwardcity!='NULL'){ $otheronwardcity= $otheronwardcity; }else{ $othero
 	}### foreach of $z ends	
 
 #echo $body;
+if($_FILES['manager_approval_report']['name']!=''){ //Manager approval report
+$flag='Longer Journey Manager Approval';
+$subject = 'ANSYS Travel Portal: New booking with manager approval report';		    
+}else{
 $flag='request';
+}
 	$requestmail= $this->sendemail($to,$subject,$body,$formemail,$id,$flag);//Send mail Car Request details 
 //exit;
 #echo "<br />";

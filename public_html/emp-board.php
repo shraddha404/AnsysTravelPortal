@@ -51,8 +51,8 @@ if(empty($_SESSION['user_id'])){
 		<a href="profile.php">My Profile</a>
 		<a href="travel-request-booking.php">Travel Booking Request</a>
 		<a href="travel-hotel-booking.php"> Hotel Only Booking Request</a>
-		<a href="travel-car-booking.php">Car Only Booking Request</a>
-		<a href="travel-train-booking.php">Train Only Booking Request</a>     
+		<!--a href="travel-car-booking.php">Car Only Booking Request</a-->
+		<!--a href="travel-train-booking.php">Train Only Booking Request</a-->     
 		<a href="feedback.php">Feedback Form</a>                     
 		<a href="my-request.php">My Requests</a><a href='logout.php'>Logout</a>
 		</div><!-- db-btn-set ends-->

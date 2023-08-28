@@ -794,19 +794,7 @@ class User {
         }
         return $trips;
     }
-    public function getVisaDetailsByUserId($id) {
-        try {
-            $select = $this->pdo->prepare("select * from visa where emp_id = ?");
-            $select->execute(array($id));
-        } catch (PDOException $e) {
-            $this->setError($e->getMessage());
-            return false;
-        }
-        while ($row = $select->fetch(PDO::FETCH_ASSOC)) {
-            $trips[] = $row;
-        }
-        return $trips;
-    }
+
     public function getff() {
         try {
             $select = $this->pdo->prepare("select * from frequent_flyer where emp_id = ?");
@@ -820,19 +808,7 @@ class User {
         }
         return $trips;
     }
-    public function getffByUserid($id) {
-        try {
-            $select = $this->pdo->prepare("select * from frequent_flyer where emp_id = ?");
-            $select->execute(array($id));
-        } catch (PDOException $e) {
-            $this->setError($e->getMessage());
-            return false;
-        }
-        while ($row = $select->fetch(PDO::FETCH_ASSOC)) {
-            $trips[] = $row;
-        }
-        return $trips;
-    }
+
     /*     * ** added by Pravin */
 
     public function visaList($emp_id) {
@@ -1116,12 +1092,12 @@ class User {
 
     function sendemail($to, $subject, $body, $formemail = null, $id, $flag, $e_ticket = null, $e_tickets = null) {
         try {
-            $headers = 'MIME-Version: 1.0' . "\r\n";
-            $headers .= 'X-Priority: 3\n';
-            $headers .= 'X-MSMail-Priority: Normal\n';
-            $headers .= 'X-Mailer: FluentMail\n';
-            $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
-            $headers .= 'Content-Transfer-Encoding: 7bit\n';
+            $headers = "MIME-Version: 1.0\n";
+            $headers .= "X-Priority: 3\n";
+            $headers .= "X-MSMail-Priority: Normal\n";
+            $headers .= "X-Mailer: FluentMail\n";
+            $headers .= "Content-type: text/html; charset=us-ascii\n";
+            $headers .= "Content-Transfer-Encoding: 7bit\n";
 
             $log_file_path = $_SERVER['DOCUMENT_ROOT'] . "/../logs";
             $date_time = date('m/d/Y h:i:s a');
@@ -1142,7 +1118,7 @@ class User {
                 foreach ($traveldesks as $traveldesk) {
                     $to .= $traveldesk['email'] . ',';
                 }
-                $to .= 'sahera.banu@ansys.com,ParvezKhan@ith.co.in,ganesh.shete@ansys.com,arun.ganesan@ansys.com,manoj.jena@ansys.com,alok.mund@ansys.com';
+                $to .= 'sahera.banu@ansys.com,ParvezKhan@ith.co.in,ganesh.shete@ansys.com,arun.ganesan@ansys.com,manoj.jena@ansys.com,alok.mund@ansys.com,sunila.valimbe@ansys.com';
                 $to = rtrim(trim($to), ',');
                 $to = ltrim(trim($to), ',');
                 ######### 
@@ -1193,7 +1169,7 @@ class User {
             } ## if of $request ends
             else if ($flag == 'Request Approval') {
                 ## send email to accounts people REQUIRMENT - 10 may 2018
-                $to_accounts = "sahera.banu@ansys.com,ganesh.shete@ansys.com,arun.ganesan@ansys.com,manoj.jena@ansys.com,alok.mund@ansys.com";
+                $to_accounts = "sahera.banu@ansys.com,ganesh.shete@ansys.com,arun.ganesan@ansys.com,manoj.jena@ansys.com,alok.mund@ansys.com,sunila.valimbe@ansys.com";
                 if (mail($to_accounts, $subject, $body, $headers)) {  ### Send email to Accounts people.
                     ################ Code to log the email details
                     $message = $date_time . " | Sending email | Subject: " . $subject . " | " . " To: " . $to_accounts . " \n------------\n";
@@ -1201,6 +1177,77 @@ class User {
                     ################
                 }
             } ## else if ends for flag=Request Approval
+            else if ($flag == 'Longer Journey Manager Approval') { ## Longer Journey Manager Approval May 2023 bookings email part starts
+                if (!empty($to))
+                    $to .= ',';
+                $row = $this->pdo->select('trips', '`id`=' . $id);
+
+                $emp_details = $this->pdo->select('emp_list', '`id`=' . $row[0]['emp_id']);
+                #$to .= $emp_details[0]['email'].",ParvezKhan@ith.co.in, sheetal.shegaonkar@ansys.com";
+                $to .= $emp_details[0]['email'].",india.ansystravel@ansys.com,ganesh.shete@ansys.com,arun.ganesan@ansys.com,manoj.jena@ansys.com,alok.mund@ansys.com,apache@puntms1.ansys.com,sunila.valimbe@ansys.com";
+                $memail = $emp_details[0]['manager'];
+                $manageremail = $emp_details[0]['manager_email'];
+		$manager_approval_report = $row[0]['manager_approval_report'];
+
+//echo $body;
+//exit;
+                $to = rtrim(trim($to), ',');
+                $to = ltrim(trim($to), ',');
+		###### Code for Manager approval report which works on atp.carvingit.com starts
+                if (mail($to, $subject, $body, $headers)) { ### Send email to Employee and travel mail box.			
+                    echo "<span class=\"message\" style='color:#32CD32; text-align:center;'>Mail Sent Successfully!</span>";
+                    ################ Code to log the email details
+                    $message = $date_time . " | Sending email with Report Link | Subject: " . $subject . " | " . " To: " . $to . " \n------------\n";
+                    $this->logMessage($log_file_path, $message);
+                    ################
+                } else {
+                    echo "<span class=\"message\" style='color:#FF0000'>Mailer Error:" . $mail->ErrorInfo . "</span>";
+                    return false;
+                }
+		###### Code for attachment which works on atp.carvingit.com ENDS
+
+		/* Manager should not get email. 13 June 2023
+                if ($manageremail) {
+                    $to_manager = $manageremail.",sahera.banu@ansys.com";
+                    $body_manager .= $body;
+                    $body_manager .= '<div class="db-btn-set" style="background-color: rgb(240, 213, 148);
+			border-radius: 3px;
+			border: thin solid rgb(80, 76, 50);
+			box-shadow: 1px 1px 0px rgb(120, 98, 73);
+			color: rgb(53, 48, 44);
+			display: inline-block;
+			font-size: 0.85em;
+			margin: auto;
+			padding: 1em 3em;
+			text-decoration: none;
+			font-weight: 600;
+			transition: all 0.5s ease 0s;">Approved</div>
+						<div class="db-btn-set" style="background-color: rgb(240, 213, 148);
+			border-radius: 3px;
+			border: thin solid rgb(80, 76, 50);
+			box-shadow: 1px 1px 0px rgb(120, 98, 73);
+			color: rgb(53, 48, 44);
+			display: inline-block;
+			font-size: 0.85em;
+			margin: auto;
+			padding: 1em 3em;
+			text-decoration: none;
+			font-weight: 600;
+			transition: all 0.5s ease 0s;">Disapprove</div>';
+                }
+
+                if (mail($to_manager, $subject, $body_manager, $headers)) { ### Send email to Manager with Disapprove buttons.			
+                    $message = $date_time . " | Sending email to Manager| Subject: " . $subject . " | " . " To: " . $to_manager . " \n------------\n";
+                    $this->logMessage($log_file_path, $message);
+                } 
+
+                if (empty($manageremail)) {
+                    $to = rtrim(trim($to), ',');
+                    $message = $date_time . " | Manager Email Empty | Subject: " . $subject . " | " . " To: " . $to . " \n------------\n";
+                    $this->logMessage($log_file_path, $message);
+                }
+		*/
+	    } ## else if of Manager approval report ends
             else { ## bookings email part starts
                 if (!empty($to))
                     $to .= ',';
@@ -1208,7 +1255,7 @@ class User {
 
                 $emp_details = $this->pdo->select('emp_list', '`id`=' . $row[0]['emp_id']);
                 #$to .= $emp_details[0]['email'].",ParvezKhan@ith.co.in, sheetal.shegaonkar@ansys.com";
-                $to .= $emp_details[0]['email'];
+                $to .= $emp_details[0]['email'].",sunila.valimbe@ansys.com";
                 $memail = $emp_details[0]['manager'];
                 $manageremail = $emp_details[0]['manager_email'];
 
@@ -1442,7 +1489,6 @@ function allrequestaprovedpagination(){
         $mail->AddAddress('rupali@carvingit.com', 'Rupali');
         $mail->AddAddress('jadhavpriyanka26@gmail.com', 'Priyanka');
         $mail->AddAddress('shraddha404@gmail.com', 'Shraddha');
-        $mail->AddAddress('rutuja@carvingit.com', 'Rutuja');
         $mail->Subject = $subject;
         $mail->Body = $email_body;
 

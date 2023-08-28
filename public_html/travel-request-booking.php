@@ -79,6 +79,19 @@ $(function () {
         });
 
 */
+
+$(function () {
+            $("input[name='longer_journey']").click(function () {
+		const input_report = document.getElementById('longer_journey_report');
+                if ($("#longer_journey").is(":checked")) {
+                    $("#manager_approval_report").show();
+		    input_report.setAttribute('required',''); 
+                } else {
+                    $("#manager_approval_report").hide();
+		    input_report.removeAttribute('required'); 
+                }
+            });
+});
 $(document).ready(function() {
 //$("form input:radio").change(function () {
 //$('input[type="radio"]').click(function() {
@@ -132,7 +145,7 @@ chromium.org/developers/how-tos/chrome-frame-getting-started -->
 <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
 <header id="header"><img src="img/logo-sml.jpg" alt="Ansys Software" /> </header>
 <div role="main">
-<form id="travel-booking" method="post" action=""  onsubmit="return confirm('Are you sure you want to submit this Airline Booking form?');">
+<form id="travel-booking" method="post" action=""  onsubmit="return confirm('Are you sure you want to submit this Airline Booking form?');" enctype="multipart/form-data">
 <div class="row cent clearfix">
 <!---------------------------------------------------------------Main Travel details Start---------------------------------------------------------------------------------------------->
 <div class="in-bloc cent"><!--img src="img/bag.jpg" alt="profile creation" /--><h1 class="in-bloc">Travel Booking</h1>
@@ -171,9 +184,44 @@ chromium.org/developers/how-tos/chrome-frame-getting-started -->
 <p><label for "adv">If cash advance required, please enter the amount</label><input type="text" id="cash_adv" name="cash_adv" placeholder="Cash advance amount" value="<?php echo $_POST['cash_adv']; ?>" autofoucs />
 	</div>
 
-	<div class="col-2-grid clearfix">  <p><label for "tour-purpose">Purpose of visit </label>
-	<textarea name="purpose_of_visit" placeholder="Please mention specific purpose of visit; DO NOT mention business visit" rows="3" required><?php echo $_POST['purpose_of_visit']; ?></textarea></p>
+	<div class="col-2-grid clearfix">
+	<p><label for "tour-purpose"><span style="color:red;">*</span> Purpose of visit </label>
+	<br/>
+	<select name="purpose_of_visit" required>
+		<option value="">Select purpose of visit</option>
+		<option value="Annual Sales Conference">Annual Sales Conference</option>
+		<option value="Approved Business Relocation">Approved Business Relocation</option>
+		<option value="Consulting Project">Consulting Project</option>
+		<option value="Customer Meeting">Customer Meeting</option>
+		<option value="Customer Training">Customer Training</option>
+		<option value="Employee Training">Employee Training</option>
+		<option value="Internal Staff Meeting">Internal Staff Meeting</option>
+		<option value="Investor Relation">Investor Relation</option>
+		<option value="Marketing Event/ UGM">Marketing Event/ UGM</option>
+		<option value="President Club">President Club</option>
+		<option value="Vendor Meeting">Vendor Meeting</option>
+		<option value="Mergers & Acquisition">Mergers & Acquisition</option>
+		<option value="Recruiting">Recruiting</option>
+	</select>
+	</p>
+	<!--
+	<textarea name="purpose_of_visit" placeholder="Please mention specific purpose of visit; DO NOT mention business visit" rows="3" required><?php echo $_POST['purpose_of_visit']; ?></textarea>
+	-->
 	</div>
+	<!--div class="col-4-grid clearfix"><p><label for "longer-journey">Upload BU budget holder approval?</label-->
+	<div class="col-4-grid clearfix"><p><label for "longer-journey">Is your flight duration more than 7 hrs?</label>
+        <ul class="radio">
+        <li><input class='rg' type="radio" name="longer_journey" value="1" id="longer_journey" required<?php if($_POST['longer_journey']=='1'){ echo "checked='checked'";}?>/><label for "yes">Yes</label>
+        </li>
+        <li>
+        <input class='rg' type="radio" name="longer_journey" value="0" id="longer_journey" required<?php if($_POST['longer_journey']=='0'){ echo "checked='checked'";}?>/><label for "no">No</label>
+        </li>
+        </ul>
+        </div>
+        <div class="col-2-grid clearfix" id="manager_approval_report" style="display:none;">
+                <p><label>Upload BU budget holder approval report</label> <input type="file" name="manager_approval_report" id="longer_journey_report"></p>
+        </div>
+
 	</fieldset>
 </div>
 <!---------------------------------------------------------------Main Travel details end--------------------------------------------------------------------------------------------------->
@@ -186,7 +234,7 @@ chromium.org/developers/how-tos/chrome-frame-getting-started -->
 <!-- Destination and Departure details-->
 <span class="f-leg"><img src="img/destination2.png" />Destination and departure details</span>
 <fieldset name "dest-dep">
-<div class="col-3-grid"><p><label for "from1" name="onwardcity" ><span style="color:red;">*</span>From City</label>
+<div class="col-3-grid"><p><label for "from1" name="onwardcity" ><span style="color:red;">*</span> From City</label>
 <select name="onwardcityoneway[]" id="onward_cityoneway"><option value=""><!--list to be populated dynamically-->From City</option>
 
 <?php 
@@ -195,7 +243,7 @@ foreach($cities as $citie) { ?>
 <?php
 } ?><option value="0">Others</option>
 </select> <div id="divonwardcity" style="display:none;">Other City:<input type="text" name="otheronwardcityoneway[]"></div></p>
-<p><label for "TO1" name="travel_to" ><span style="color:red;">*</span>To City</label><select name="travel_tooneway[]" id="traveltooneway" onChange="getHotel(this.value);"><option value="">To City</option><?php
+<p><label for "TO1" name="travel_to" ><span style="color:red;">*</span> To City</label><select name="travel_tooneway[]" id="traveltooneway" onChange="getHotel(this.value);"><option value="">To City</option><?php
 foreach($cities as $citie) { ?>
 <option value="<?php echo $citie['id']; ?>"<?php if($citie['id']==$travel_to[0]) {echo "selected='selected'";}?>><?php echo $citie['city_name'].",".$citie['city_state'];?></option>
 <?php
@@ -264,14 +312,11 @@ foreach($hotels as $hotel) { ?>
 </fieldset>
 <span class="f-leg"><img src="img/car.png" width="32px" height="32px"/>Car Booking</span>
 
-
 <fieldset name "dest-dep">
 <div class="col-3-grid">
 <p><input type="checkbox" name="airport_droponeway[]" value="yes" <?php if($airport_drop[0]=='yes'){echo "checked='checked'"; }?>> <label for "air-co">Need Airport drop</label>&nbsp;</p>
 <p><input type="checkbox" name="airport_pickuponeway[]" <?php if($airport_pickup[0]=='yes'){echo "checked='checked'"; }?> value="yes"> <label for "air-co">Need Airport pick up</label>&nbsp;</p>
 <p><label for "air-co"> Multiple days booking</label><input type="checkbox" name="need_caroneway[]" value="yes" <?php if($_POST['need_car']=='yes'){echo "checked='checked'"; }?>></p>
-
-
 <p><label for "car-co">Select preferred car vendor co.</label><select name="car_companyoneway[]" id="car_company" class="car_company">
 <option value="">Select preferred car vendor co.</option>
 <?php
@@ -279,7 +324,6 @@ foreach($cars as $car) { ?>
 <option value="<?php echo $car['id']; ?>" <?php if($car['id']==$_POST['car_company']) {echo "selected='selected'";}?>><?php echo $car['name']; ?></option>
 <?php
 } ?>
-
 </select> </p>
 </div>
 <div class="col-3-grid">
@@ -295,7 +339,6 @@ foreach($cars as $car) { ?>
 <option value="SUV" <?php if($_POST['car_size']=='SUV') {echo "selected='selected'";}?>>SUV</option>
 </select></p>
 <p><label for "dep-date1">Pickup Time </label><input type="text" id="car_pickuptime" name="car_pickuptimeoneway[]" placeholder="Please mention pick up time for the drop"  autofocus /></p>
-
 
 <!--/div></fieldset>
 --> <!-- SKK -->

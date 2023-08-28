@@ -8,6 +8,7 @@ if(empty($_SESSION['user_id']))
 header("location:login.php");
 }
 $trip=$u->getTripDetails($trip_id);
+//print_r($trip);
 $getdestdeps=$u->getdestdep($trip_id);
 //print_r($getdestdeps);
 //echo '<br><br>';
@@ -121,6 +122,12 @@ if($trip['booking_type']=='train'){  echo "Train Booking Only"; }?>
     <td>Office Location</td>
     <td><?php $l=$u->getoffice_locations($trip['location']); echo $l['location']; ?></td>
   </tr>
+<?php if($trip['manager_approval_report'] != ''){?>
+ <tr>
+    <td>Approval Report</td>
+    <td><a href="/uploads/manager-approval-reports/<?php echo $trip['manager_approval_report'];?>" target="_blank">BU budget holder approval report</a> </td>
+  </tr>
+<?php }?>
    <!--tr>
     <td>Airport Drop Location</td>
     <td><?php echo $getdestdeps[0]['airport_drop_loca'];?></td>

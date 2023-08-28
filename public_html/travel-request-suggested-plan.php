@@ -153,6 +153,12 @@ else if($trip['booking_type']=='train'){  echo "Train Booking Only"; }?>
 <td>Address</td>
 <td><?php echo  $trip['address1'].' '.$trip['address2'];?></td>
 </tr>
+<?php if($trip['manager_approval_report'] != ''){?>
+<tr>
+    <td>Approval Report</td>
+    <td><a href="/uploads/manager-approval-reports/<?php echo $trip['manager_approval_report'];?>" target="_blank">BU budget holder approval report</a> </td>
+  </tr>
+<?php } ?>
 <!--tr>
 <td>Need Car for entire duration of stay </td>
 <td><?php echo $getdestdeps[0]['need_car'];?></td>
@@ -267,13 +273,10 @@ foreach($air_bookings as $air_booking){# foreach air booking list
 		<input type="hidden" name="preferred_airline_time" value="<?php echo $getdestdep['preferred_airline_time'];?>">
 	<td><?php echo $getdestdep['preferred_airline_time'];?></td>
 <!-----for round trip travel to and form city -------->
-
 <?php if(($i==1 && $trip['trip_type']=='Round trip')) { ?><input type="hidden" id="travel_to" name="travel_to" value="<?php echo $getdestdep['travel_from'];?>">
 <input type="hidden" id="travel_from" name="travel_from" value="<?php echo $getdestdep['travel_to'];?>">
 
 
-
-<input type="hidden" id="travel_from" name="travel_from" value="<?php echo $getdestdep['travel_to'];?>">
 
 	<td><?php $cityto=$u->getcity($getdestdep['travel_to']); if($getdestdep['travel_to']==0) { echo $getdestdep['othertravel_to']; }else{echo $cityto['city_name'];}?></td>
 <td><?php $city=$u->getcity($getdestdep['travel_from']);  if($getdestdep['travel_from']==0) { echo $getdestdep['otheronwardcity']; }else{echo $city['city_name'];}?></td><!--col elements should be editable if employee clicks on Amend plan-->
